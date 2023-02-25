@@ -1,0 +1,35 @@
+pipeline{
+  agent any
+ 
+  environment{
+   PATH = "/opt/maven3/bin:$PATH”
+  }
+  stages{
+      stage("Gte Checkout"){
+          steps{
+              git credentialsId: 'java', url: 'https://github.com/Razz-d-jazzy22525/mynew.git'
+          }
+      }
+      stage("Maven Build"){
+          steps{
+              sh "mvn clean package"
+              sh "mv target/*.war target/mynew.war"
+          }
+      }
+      stage("deploy-dev"){
+          steps{
+               sshagent(['tomcat-new']){
+               sh """
+                    scp -o StrictHostKeyChecking=no target/mynew.war ec2-user@10.5.1.100:/home/ec2-user/apache-tomcat-9.0.72/webapps/
+                   
+                    ssh ec2-user@10.5.1.100 /home/ec2-user/apache-tomcat-9.0.72/bin/shutdown.sh
+                   
+                    ssh ec2-user@10.5.1.100 /home/ec2-user/apache-tomcat-9-0.72/bin/startup.sh
+                   
+                 """
+           }
+          
+           }
+        }
+    }
+}
